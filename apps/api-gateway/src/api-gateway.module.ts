@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ObservabilityModule } from '../../../libs/common/src/observability/observability.module';
 import { ApiGatewayController } from './api-gateway.controller';
 import { ApiGatewayService } from './api-gateway.service';
 import { AuthModule } from './auth/auth.module';
@@ -22,6 +23,7 @@ import { ProxyModule } from './proxy/proxy.module';
         ttl: 60_000,
       },
     ]),
+    ObservabilityModule.forService('api-gateway'),
     AuthModule,
     ProxyModule,
   ],

@@ -2,10 +2,8 @@ import { Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import {
-  getKafkaClientConfig,
-  KAFKA_CLIENT,
-} from '../../../../libs/common/src';
+import { getKafkaClientConfig } from '../../../../libs/common/src/config/kafka.config';
+import { KAFKA_CLIENT } from '../../../../libs/common/src/events/commerce-events';
 import { ProductStockEventsPublisher } from './product-stock-events.publisher';
 import { Product } from './product.entity';
 import { ProductCacheService } from './product-cache.service';

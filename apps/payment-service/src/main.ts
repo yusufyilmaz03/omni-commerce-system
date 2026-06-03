@@ -1,10 +1,15 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { getKafkaConfig } from '../../../libs/common/src';
+import { getKafkaConfig } from '../../../libs/common/src/config/kafka.config';
+import { JsonLogger } from '../../../libs/common/src/observability/json-logger.service';
+import { startOpenTelemetry } from '../../../libs/common/src/observability/tracing';
 import { PaymentServiceModule } from './payment-service.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(PaymentServiceModule);
+  startOpenTelemetry('payment-service');
+  const app = await NestFactory.create(PaymentServiceModule, {
+    logger: new JsonLogger('payment-service'),
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       forbidNonWhitelisted: true,

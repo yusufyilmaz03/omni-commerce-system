@@ -5,8 +5,8 @@ import { lastValueFrom } from 'rxjs';
 import {
   CommerceTopics,
   KAFKA_CLIENT,
-  StockEventPayload,
-} from '../../../../libs/common/src';
+} from '../../../../libs/common/src/events/commerce-events';
+import type { StockEventPayload } from '../../../../libs/common/src/events/commerce-events';
 
 @Injectable()
 export class ProductStockEventsPublisher implements OnModuleDestroy {

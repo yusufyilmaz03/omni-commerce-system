@@ -14,6 +14,8 @@ services:
       ORDER_SERVICE_URL: http://order-service:3002
       PAYMENT_SERVICE_URL: http://payment-service:3003
       KAFKA_BROKER: kafka:19092
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     ports:
       - "3000:3000"
 
@@ -35,6 +37,8 @@ services:
       KAFKA_BROKER: kafka:19092
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     ports:
       - "3001:3001"
 
@@ -53,6 +57,8 @@ services:
       ORDER_DB_PASSWORD: postgres
       ORDER_DB_NAME: order_db
       KAFKA_BROKER: kafka:19092
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     ports:
       - "3002:3002"
 
@@ -71,6 +77,8 @@ services:
       PAYMENT_DB_PASSWORD: postgres
       PAYMENT_DB_NAME: payment_db
       KAFKA_BROKER: kafka:19092
+      OTEL_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
     ports:
       - "3003:3003"
 
@@ -141,3 +149,48 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - "5435:5432"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    depends_on:
+      - api-gateway
+      - product-service
+      - order-service
+      - payment-service
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    depends_on:
+      - prometheus
+      - tempo
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    depends_on:
+      - tempo
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./observability/otel-collector/config.yaml:/etc/otelcol/config.yaml:ro
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    command: ["-config.file=/etc/tempo.yaml"]
+    ports:
+      - "3200:3200"
+    volumes:
+      - ./observability/tempo/tempo.yaml:/etc/tempo.yaml:ro

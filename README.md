@@ -18,6 +18,7 @@ Infrastructure:
 - Docker Compose for local development
 - Kubernetes manifests for deployment/service discovery
 - Postman collection for API Gateway flow testing
+- JSON logs, Prometheus metrics, Grafana dashboards, and OpenTelemetry traces
 
 ## Prerequisites
 
@@ -79,6 +80,35 @@ docker compose up --build
 
 The app services override local `.env` hostnames with Compose service DNS names.
 
+Observability UIs:
+
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3004` (`admin` / `admin`)
+- Tempo API: `http://localhost:3200`
+
+Each NestJS service exposes Prometheus metrics at `/metrics`.
+
+## Observability
+
+The shared observability module in `libs/common` provides:
+
+- ELK-compatible JSON application logs
+- Prometheus default Node.js metrics
+- HTTP request counter and duration histogram
+- `/metrics` endpoint on each service
+- OpenTelemetry auto-instrumentation when `OTEL_ENABLED=true`
+- OTLP trace export through OpenTelemetry Collector to Tempo
+
+Local Compose observability files:
+
+```txt
+observability/prometheus/prometheus.yml
+observability/otel-collector/config.yaml
+observability/tempo/tempo.yaml
+observability/grafana/provisioning/
+observability/grafana/dashboards/
+```
+
 ## API Flow
 
 Import:
@@ -136,12 +166,15 @@ Apply manifests:
 kubectl apply -f k8s/00-namespace-config.yaml
 kubectl apply -f k8s/10-infrastructure.yaml
 kubectl apply -f k8s/20-applications.yaml
+kubectl apply -f k8s/30-observability.yaml
 ```
 
 For local clusters without `LoadBalancer` support:
 
 ```bash
 kubectl -n omni-commerce port-forward svc/api-gateway 3000:3000
+kubectl -n omni-commerce port-forward svc/grafana 3004:3000
+kubectl -n omni-commerce port-forward svc/prometheus 9090:9090
 ```
 
 ## Notes
@@ -149,4 +182,4 @@ kubectl -n omni-commerce port-forward svc/api-gateway 3000:3000
 - Current API Gateway user storage is in-memory for the development phase.
 - TypeORM `synchronize: true` is enabled for local development.
 - KafkaJS may print a partitioner migration warning; it is not a startup failure.
-- Observability stack integration is the next roadmap step.
+- OpenTelemetry is disabled for local `nest start` unless `OTEL_ENABLED=true` is set.

@@ -310,6 +310,28 @@
         ],
         "url": "{{baseUrl}}/payments/circuit-breaker"
       }
+    },
+    {
+      "name": "Observability",
+      "item": [
+        {
+          "name": "Metrics - API Gateway",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }

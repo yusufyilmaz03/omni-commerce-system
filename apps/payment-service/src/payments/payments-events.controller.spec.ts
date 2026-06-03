@@ -1,7 +1,7 @@
 import type {
   CommerceEvent,
   OrderEventPayload,
-} from '../../../../libs/common/src';
+} from '../../../../libs/common/src/events/commerce-events';
 import { PaymentsEventsController } from './payments-events.controller';
 import { PaymentsService } from './payments.service';
 

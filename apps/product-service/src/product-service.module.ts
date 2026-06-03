@@ -2,7 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { getDatabaseConfig } from '../../../libs/common/src';
+import { getDatabaseConfig } from '../../../libs/common/src/config/database.config';
+import { ObservabilityModule } from '../../../libs/common/src/observability/observability.module';
 import { ProductsModule } from './products/products.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { ProductsModule } from './products/products.module';
       envFilePath: 'apps/product-service/.env',
     }),
     TypeOrmModule.forRoot(getDatabaseConfig('PRODUCT')),
+    ObservabilityModule.forService('product-service'),
     ProductsModule,
   ],
 })

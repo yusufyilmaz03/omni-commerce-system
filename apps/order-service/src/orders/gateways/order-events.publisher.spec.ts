@@ -1,6 +1,6 @@
 import { of } from 'rxjs';
 
-import { CommerceTopics } from '../../../../../libs/common/src';
+import { CommerceTopics } from '../../../../../libs/common/src/events/commerce-events';
 import { Order } from '../order.entity';
 import { OrderStatus } from '../order-status.enum';
 import { OrderEventsPublisher } from './order-events.publisher';

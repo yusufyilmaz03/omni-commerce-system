@@ -5,8 +5,8 @@ import { lastValueFrom } from 'rxjs';
 import {
   CommerceTopics,
   KAFKA_CLIENT,
-  OrderEventPayload,
-} from '../../../../../libs/common/src';
+} from '../../../../../libs/common/src/events/commerce-events';
+import type { OrderEventPayload } from '../../../../../libs/common/src/events/commerce-events';
 import { Order } from '../order.entity';
 
 export type OrderEventName =
