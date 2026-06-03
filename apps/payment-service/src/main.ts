@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { getKafkaConfig } from '../../../libs/common/src';
 import { PaymentServiceModule } from './payment-service.module';
 
 async function bootstrap() {
@@ -11,6 +12,10 @@ async function bootstrap() {
       whitelist: true,
     }),
   );
+  app.connectMicroservice(
+    getKafkaConfig('payment-service', 'payment-service-group'),
+  );
+  await app.startAllMicroservices();
 
   await app.listen(process.env.PORT ?? 3003);
 }

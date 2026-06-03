@@ -6,6 +6,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateStockDto } from './dto/update-stock.dto';
 import { Product } from './product.entity';
 import { ProductCacheService } from './product-cache.service';
+import type { ProductStockItemPayload } from '../../../../libs/common/src/events/commerce-events';
 
 @Injectable()
 export class ProductsService {
@@ -65,5 +66,29 @@ export class ProductsService {
     await this.productCacheService.deleteProductList();
 
     return savedProduct;
+  }
+
+  async decreaseStockForOrder(
+    orderId: string,
+    items: ProductStockItemPayload[],
+  ): Promise<Product[]> {
+    const updatedProducts: Product[] = [];
+
+    for (const item of items) {
+      const product = await this.findOne(item.productId);
+
+      if (product.stock < item.quantity) {
+        throw new Error(
+          `Insufficient stock for product ${item.productId} on order ${orderId}`,
+        );
+      }
+
+      product.stock -= item.quantity;
+      updatedProducts.push(await this.productsRepository.save(product));
+    }
+
+    await this.productCacheService.deleteProductList();
+
+    return updatedProducts;
   }
 }

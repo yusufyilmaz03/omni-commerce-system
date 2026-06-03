@@ -6,6 +6,7 @@ import { CircuitBreakerService } from './circuit-breaker.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { RefundPaymentDto } from './dto/refund-payment.dto';
 import { MockPaymentProcessorService } from './mock-payment-processor.service';
+import { PaymentEventsPublisher } from './payment-events.publisher';
 import { Payment } from './payment.entity';
 import { PaymentStatus } from './payment-status.enum';
 
@@ -16,6 +17,7 @@ export class PaymentsService {
     private readonly paymentsRepository: Repository<Payment>,
     private readonly mockPaymentProcessor: MockPaymentProcessorService,
     private readonly circuitBreaker: CircuitBreakerService,
+    private readonly paymentEventsPublisher: PaymentEventsPublisher,
   ) {}
 
   async processPayment(processPaymentDto: ProcessPaymentDto): Promise<Payment> {
@@ -32,13 +34,23 @@ export class PaymentsService {
       payment.status = PaymentStatus.Succeeded;
       payment.failureReason = undefined;
 
-      return this.paymentsRepository.save(payment);
+      const savedPayment = await this.paymentsRepository.save(payment);
+      await this.paymentEventsPublisher.publishPaymentSucceeded(
+        this.toPaymentEventPayload(savedPayment),
+      );
+
+      return savedPayment;
     } catch (error) {
       payment.status = PaymentStatus.Failed;
       payment.failureReason =
         error instanceof Error ? error.message : 'Unknown payment failure';
 
-      return this.paymentsRepository.save(payment);
+      const savedPayment = await this.paymentsRepository.save(payment);
+      await this.paymentEventsPublisher.publishPaymentFailed(
+        this.toPaymentEventPayload(savedPayment),
+      );
+
+      return savedPayment;
     }
   }
 
@@ -95,5 +107,16 @@ export class PaymentsService {
     }
 
     return payment;
+  }
+
+  private toPaymentEventPayload(payment: Payment) {
+    return {
+      amount: payment.amount,
+      failureReason: payment.failureReason,
+      orderId: payment.orderId,
+      paymentId: payment.id,
+      status: payment.status,
+      userId: payment.userId,
+    };
   }
 }

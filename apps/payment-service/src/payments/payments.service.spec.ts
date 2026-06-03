@@ -5,6 +5,7 @@ import { CircuitBreakerService } from './circuit-breaker.service';
 import { ProcessPaymentDto } from './dto/process-payment.dto';
 import { RefundPaymentDto } from './dto/refund-payment.dto';
 import { MockPaymentProcessorService } from './mock-payment-processor.service';
+import { PaymentEventsPublisher } from './payment-events.publisher';
 import { Payment } from './payment.entity';
 import { PaymentStatus } from './payment-status.enum';
 import { PaymentsService } from './payments.service';
@@ -16,6 +17,12 @@ describe('PaymentsService', () => {
   >;
   let mockPaymentProcessor: jest.Mocked<MockPaymentProcessorService>;
   let circuitBreaker: jest.Mocked<Pick<CircuitBreakerService, 'execute'>>;
+  let paymentEventsPublisher: jest.Mocked<
+    Pick<
+      PaymentEventsPublisher,
+      'publishPaymentFailed' | 'publishPaymentSucceeded'
+    >
+  >;
 
   const createdAt = new Date('2026-01-01T00:00:00.000Z');
   const processPaymentDto: ProcessPaymentDto = {
@@ -41,6 +48,10 @@ describe('PaymentsService', () => {
     circuitBreaker = {
       execute: jest.fn(),
     };
+    paymentEventsPublisher = {
+      publishPaymentFailed: jest.fn(),
+      publishPaymentSucceeded: jest.fn(),
+    };
 
     paymentsRepository.create.mockImplementation(
       (payment) => payment as Payment,
@@ -56,11 +67,14 @@ describe('PaymentsService', () => {
     mockPaymentProcessor.process.mockResolvedValue(undefined);
     mockPaymentProcessor.refund.mockResolvedValue(undefined);
     circuitBreaker.execute.mockImplementation((operation) => operation());
+    paymentEventsPublisher.publishPaymentFailed.mockResolvedValue(undefined);
+    paymentEventsPublisher.publishPaymentSucceeded.mockResolvedValue(undefined);
 
     service = new PaymentsService(
       paymentsRepository as unknown as Repository<Payment>,
       mockPaymentProcessor,
       circuitBreaker as unknown as CircuitBreakerService,
+      paymentEventsPublisher as unknown as PaymentEventsPublisher,
     );
   });
 
@@ -71,6 +85,18 @@ describe('PaymentsService', () => {
     expect(result.amount).toBe('50.00');
     expect(mockPaymentProcessor.process.mock.calls).toEqual([[50, false]]);
     expect(circuitBreaker.execute.mock.calls).toHaveLength(1);
+    expect(paymentEventsPublisher.publishPaymentSucceeded.mock.calls).toEqual([
+      [
+        {
+          amount: '50.00',
+          failureReason: undefined,
+          orderId: 'order-1',
+          paymentId: 'payment-1',
+          status: PaymentStatus.Succeeded,
+          userId: 'user-1',
+        },
+      ],
+    ]);
   });
 
   it('stores a failed payment when processor fails', async () => {
@@ -86,6 +112,18 @@ describe('PaymentsService', () => {
     expect(result.status).toBe(PaymentStatus.Failed);
     expect(result.failureReason).toBe('Mock payment processor failed');
     expect(mockPaymentProcessor.process.mock.calls).toEqual([[50, true]]);
+    expect(paymentEventsPublisher.publishPaymentFailed.mock.calls).toEqual([
+      [
+        {
+          amount: '50.00',
+          failureReason: 'Mock payment processor failed',
+          orderId: 'order-1',
+          paymentId: 'payment-1',
+          status: PaymentStatus.Failed,
+          userId: 'user-1',
+        },
+      ],
+    ]);
   });
 
   it('stores a failed payment when circuit breaker rejects execution', async () => {
