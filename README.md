@@ -177,9 +177,10 @@ kubectl -n omni-commerce port-forward svc/grafana 3004:3000
 kubectl -n omni-commerce port-forward svc/prometheus 9090:9090
 ```
 
-## Notes
+## Production Readiness Notes
 
-- Current API Gateway user storage is in-memory for the development phase.
+- API Gateway authentication is suitable for demo/development only and is not production-ready because user storage is in-memory.
+- Use persistent user storage, token revocation/rotation, secret management, and stricter CORS/security headers before production use.
 - TypeORM `synchronize: true` is enabled for local development.
 - KafkaJS may print a partitioner migration warning; it is not a startup failure.
 - OpenTelemetry is disabled for local `nest start` unless `OTEL_ENABLED=true` is set.
