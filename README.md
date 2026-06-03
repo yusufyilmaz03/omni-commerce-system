@@ -111,6 +111,12 @@ observability/grafana/dashboards/
 
 ## API Flow
 
+For the full manual endpoint order, payload examples, Kafka flow, and observability checks, see:
+
+```txt
+howTo.md
+```
+
 Import:
 
 ```txt
