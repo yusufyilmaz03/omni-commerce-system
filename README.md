@@ -1,98 +1,152 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Omni-Commerce System
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS microservice graduation project for a scalable, resilient, event-driven e-commerce backend.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Architecture
 
-## Description
+- `api-gateway`: external entry point, JWT auth, bcrypt password hashing, rate limiting, global exception filter, logging interceptor, service proxy routes
+- `product-service`: product CRUD, validation, PostgreSQL, Redis product list cache, stock Kafka events
+- `order-service`: order creation, Saga orchestration, compensation handling, order Kafka events
+- `payment-service`: mock payment processor, Circuit Breaker, payment Kafka events
+- `libs/common`: shared database, Kafka, and event contract helpers
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Infrastructure:
 
-## Project setup
+- PostgreSQL database per service
+- Kafka for event-driven service communication
+- Redis for product list caching
+- Docker Compose for local development
+- Kubernetes manifests for deployment/service discovery
+- Postman collection for API Gateway flow testing
 
-```bash
-$ npm install
-```
+## Prerequisites
 
-## Compile and run the project
+- Node.js 22+
+- npm
+- Docker and Docker Compose
+- Optional: Kubernetes cluster such as Docker Desktop Kubernetes, Minikube, or Kind
+
+## Install
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+## Local Infrastructure
+
+Start PostgreSQL, Kafka, Redis, and create Kafka topics:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+docker compose up -d kafka redis product-db order-db payment-db
+docker compose up kafka-init
 ```
 
-## Deployment
+Kafka topics created by `kafka-init`:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- `order.created`
+- `order.completed`
+- `order.failed`
+- `payment.succeeded`
+- `payment.failed`
+- `stock.decreased`
+- `stock.failed`
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Run Services Locally
+
+Use separate terminals:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npx nest start product-service
+npx nest start order-service
+npx nest start payment-service
+npx nest start api-gateway
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Default ports:
 
-## Resources
+- API Gateway: `http://localhost:3000`
+- Product Service: `http://localhost:3001`
+- Order Service: `http://localhost:3002`
+- Payment Service: `http://localhost:3003`
 
-Check out a few resources that may come in handy when working with NestJS:
+## Docker Compose Apps
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Build and run the full local stack:
 
-## Support
+```bash
+docker compose up --build
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+The app services override local `.env` hostnames with Compose service DNS names.
 
-## Stay in touch
+## API Flow
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Import:
 
-## License
+```txt
+postman/omni-commerce-system.postman_collection.json
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Recommended request order:
+
+1. `Health`
+2. `Auth - Register`
+3. `Products - Create`
+4. `Products - List`
+5. `Orders - Create`
+6. `Orders - Find By ID`
+7. `Payments - Process`
+8. `Payments - Circuit Breaker`
+
+Protected routes require:
+
+```txt
+Authorization: Bearer {{accessToken}}
+```
+
+## Tests and Validation
+
+```bash
+npm test -- --runInBand
+npx eslint "{apps,libs}/**/*.ts"
+npx nest build api-gateway
+npx nest build product-service
+npx nest build order-service
+npx nest build payment-service
+npx tsc -p apps/api-gateway/tsconfig.app.json --noEmit
+npx tsc -p apps/product-service/tsconfig.app.json --noEmit
+npx tsc -p apps/order-service/tsconfig.app.json --noEmit
+npx tsc -p apps/payment-service/tsconfig.app.json --noEmit
+```
+
+## Kubernetes
+
+Build images with names used by the manifests:
+
+```bash
+docker build -t omni-commerce/api-gateway:latest -f apps/api-gateway/Dockerfile .
+docker build -t omni-commerce/product-service:latest -f apps/product-service/Dockerfile .
+docker build -t omni-commerce/order-service:latest -f apps/order-service/Dockerfile .
+docker build -t omni-commerce/payment-service:latest -f apps/payment-service/Dockerfile .
+```
+
+Apply manifests:
+
+```bash
+kubectl apply -f k8s/00-namespace-config.yaml
+kubectl apply -f k8s/10-infrastructure.yaml
+kubectl apply -f k8s/20-applications.yaml
+```
+
+For local clusters without `LoadBalancer` support:
+
+```bash
+kubectl -n omni-commerce port-forward svc/api-gateway 3000:3000
+```
+
+## Notes
+
+- Current API Gateway user storage is in-memory for the development phase.
+- TypeORM `synchronize: true` is enabled for local development.
+- KafkaJS may print a partitioner migration warning; it is not a startup failure.
+- Observability stack integration is the next roadmap step.

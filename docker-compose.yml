@@ -1,4 +1,79 @@
 services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: apps/api-gateway/Dockerfile
+    depends_on:
+      - product-service
+      - order-service
+      - payment-service
+    environment:
+      PORT: 3000
+      JWT_SECRET: super_secret_key
+      PRODUCT_SERVICE_URL: http://product-service:3001
+      ORDER_SERVICE_URL: http://order-service:3002
+      PAYMENT_SERVICE_URL: http://payment-service:3003
+      KAFKA_BROKER: kafka:19092
+    ports:
+      - "3000:3000"
+
+  product-service:
+    build:
+      context: .
+      dockerfile: apps/product-service/Dockerfile
+    depends_on:
+      - product-db
+      - redis
+      - kafka-init
+    environment:
+      PORT: 3001
+      PRODUCT_DB_HOST: product-db
+      PRODUCT_DB_PORT: 5432
+      PRODUCT_DB_USERNAME: postgres
+      PRODUCT_DB_PASSWORD: postgres
+      PRODUCT_DB_NAME: product_db
+      KAFKA_BROKER: kafka:19092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    ports:
+      - "3001:3001"
+
+  order-service:
+    build:
+      context: .
+      dockerfile: apps/order-service/Dockerfile
+    depends_on:
+      - order-db
+      - kafka-init
+    environment:
+      PORT: 3002
+      ORDER_DB_HOST: order-db
+      ORDER_DB_PORT: 5432
+      ORDER_DB_USERNAME: postgres
+      ORDER_DB_PASSWORD: postgres
+      ORDER_DB_NAME: order_db
+      KAFKA_BROKER: kafka:19092
+    ports:
+      - "3002:3002"
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: apps/payment-service/Dockerfile
+    depends_on:
+      - payment-db
+      - kafka-init
+    environment:
+      PORT: 3003
+      PAYMENT_DB_HOST: payment-db
+      PAYMENT_DB_PORT: 5432
+      PAYMENT_DB_USERNAME: postgres
+      PAYMENT_DB_PASSWORD: postgres
+      PAYMENT_DB_NAME: payment_db
+      KAFKA_BROKER: kafka:19092
+    ports:
+      - "3003:3003"
+
   kafka:
     image: apache/kafka:3.7.0
     ports:
